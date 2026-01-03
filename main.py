@@ -256,6 +256,14 @@ table.dataTable tbody td{padding:6px}
 .card-chart{height:300px}
 .card-calendar{height:400px}
 #tradingview_chart{height:320px!important}
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate{text-align:left!important;float:none!important;font-size:11px!important;margin:4px 0!important}
+.dataTables_wrapper .dataTables_filter{margin-top:6px!important}
+.dataTables_wrapper .dataTables_filter input{width:120px!important;font-size:11px!important;padding:3px 5px!important}
+.dataTables_wrapper .dataTables_length select{font-size:11px!important;padding:2px!important}
+.dataTables_wrapper .dataTables_paginate .paginate_button{padding:3px 8px!important;font-size:11px!important;min-width:auto!important}
 }
 
 @media(max-width:480px){
@@ -271,6 +279,13 @@ table.dataTable tbody td{padding:5px 4px}
 #tradingview_chart{height:280px!important}
 #footerApp{padding:5px 0}
 .marquee-text{font-size:12px}
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate{font-size:10px!important}
+.dataTables_wrapper .dataTables_filter input{width:100px!important;font-size:10px!important}
+.dataTables_wrapper .dataTables_length select{font-size:10px!important}
+.dataTables_wrapper .dataTables_paginate .paginate_button{padding:2px 6px!important;font-size:10px!important}
 }
 </style>
 </head>
@@ -292,12 +307,6 @@ table.dataTable tbody td{padding:5px 4px}
 </div>
 <div class="container-flex">
 <div>
-<h3 style="display:block;margin-top:30px">Chart Harga USD/IDR Investing - Jangka Waktu 15 Menit</h3>
-<div class="card card-chart">
-<iframe class="chart-iframe" src="https://sslcharts.investing.com/index.php?force_lang=54&pair_ID=2138&timescale=900&candles=80&style=candles" height="430" style="margin-top:-62px" loading="lazy"></iframe>
-</div>
-</div>
-<div>
 <h3>Harga USD/IDR Google Finance</h3>
 <div class="card card-usd" style="margin-top:0;padding-top:2px">
 <p>Harga saat ini: <span id="currentPrice" class="loading-text">Memuat data...</span></p>
@@ -305,20 +314,28 @@ table.dataTable tbody td{padding:5px 4px}
 <ul id="priceList"><li class="loading-text">Menunggu data...</li></ul>
 </div>
 </div>
+<div>
+<h3 style="display:block;margin-top:30px">Chart Harga USD/IDR Investing - Jangka Waktu 15 Menit</h3>
+<div class="card card-chart">
+<iframe class="chart-iframe" src="https://sslcharts.investing.com/index.php?force_lang=54&pair_ID=2138&timescale=900&candles=80&style=candles" height="430" style="margin-top:-62px" loading="lazy"></iframe>
+</div>
+</div>
+
 </div>
 <div class="container-flex">
-<div>
-<h3 style="display:block;margin-top:30px">Kalender Ekonomi</h3>
-<div class="card card-calendar">
-<iframe class="chart-iframe" src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&category=_employment,_economicActivity,_inflation,_centralBanks,_confidenceIndex&importance=3&features=datepicker,timezone,timeselector,filters&countries=5,37,48,35,17,36,26,12,72&calType=week&timeZone=27&lang=54" height="467" loading="lazy"></iframe>
-</div>
-</div>
 <div>
 <h3>Sekilas Ingfo Treasury</h3>
 <div class="card card-info" style="margin-top:0;padding-top:2px">
 <ul id="isiTreasury" style="list-style:none;padding-left:0"></ul>
 </div>
 </div>
+<div>
+<h3 style="display:block;margin-top:30px">Kalender Ekonomi</h3>
+<div class="card card-calendar">
+<iframe class="chart-iframe" src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&category=_employment,_economicActivity,_inflation,_centralBanks,_confidenceIndex&importance=3&features=datepicker,timezone,timeselector,filters&countries=5,37,48,35,17,36,26,12,72&calType=week&timeZone=27&lang=54" height="467" loading="lazy"></iframe>
+</div>
+</div>
+
 </div>
 <footer id="footerApp"><span class="marquee-text">&copy;2025 ~ahmadkholil~</span></footer>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
