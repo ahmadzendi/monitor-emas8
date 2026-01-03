@@ -304,7 +304,7 @@ table.dataTable tbody td{padding:5px 4px}
 <div style="margin-top:40px">
 <h3>Chart Harga Emas (XAU/USD)</h3>
 <div id="tradingview_chart"></div>
-</div>
+</div></div>
 <div class="container-flex">
 <div>
 <h3>Harga USD/IDR Google Finance</h3>
