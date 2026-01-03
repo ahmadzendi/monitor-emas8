@@ -240,8 +240,13 @@ th.profit,td.profit{width:154px;min-width:80px;max-width:160px;text-align:left}
 .loading-text{color:#999;font-style:italic}
 .tbl-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 
+/* TradingView Chart Container - Fixed Height */
+.tradingview-section{margin-top:40px;clear:both}
+.tradingview-wrapper{height:400px;overflow:hidden;border:1px solid #ccc;border-radius:6px}
+.tradingview-wrapper iframe{width:100%;height:100%;border:0}
+
 @media(max-width:768px){
-body{padding:12px;padding-bottom:45px}
+body{padding:12px;padding-bottom:50px}
 h2{font-size:1.1em}
 h3{font-size:1em;margin:15px 0 8px}
 #jam{font-size:1.1em;margin-bottom:10px}
@@ -249,43 +254,52 @@ table.dataTable{font-size:13px;min-width:580px}
 table.dataTable thead th{padding:8px 6px}
 table.dataTable tbody td{padding:6px}
 .theme-toggle-btn{width:40px;height:40px;font-size:1.3em}
-.container-flex{gap:12px}
-.card-usd,.card-info,.card-chart,.card-calendar{width:100%;max-width:100%;min-width:0}
-.card-usd{height:320px}
-.card-info{height:300px}
-.card-chart{height:300px}
-.card-calendar{height:400px}
-#tradingview_chart{height:320px!important}
+.container-flex{flex-direction:column;gap:15px}
+.card-usd,.card-info,.card-chart,.card-calendar{width:100%!important;max-width:100%!important;min-width:0!important}
+.card-usd{height:auto;min-height:320px}
+.card-info{height:auto;min-height:300px}
+.card-chart{height:380px}
+.card-chart iframe{height:440px!important;margin-top:-60px}
+.card-calendar{height:450px}
+.card-calendar iframe{height:100%!important}
+.tradingview-wrapper{height:350px}
 .dataTables_wrapper .dataTables_length,
 .dataTables_wrapper .dataTables_filter,
 .dataTables_wrapper .dataTables_info,
-.dataTables_wrapper .dataTables_paginate{text-align:left!important;float:none!important;font-size:11px!important;margin:4px 0!important}
-.dataTables_wrapper .dataTables_filter{margin-top:6px!important}
-.dataTables_wrapper .dataTables_filter input{width:120px!important;font-size:11px!important;padding:3px 5px!important}
-.dataTables_wrapper .dataTables_length select{font-size:11px!important;padding:2px!important}
-.dataTables_wrapper .dataTables_paginate .paginate_button{padding:3px 8px!important;font-size:11px!important;min-width:auto!important}
+.dataTables_wrapper .dataTables_paginate{text-align:left!important;float:none!important;font-size:12px!important;margin:5px 0!important}
+.dataTables_wrapper .dataTables_filter{margin-top:8px!important}
+.dataTables_wrapper .dataTables_filter input{width:140px!important;font-size:12px!important;padding:4px 6px!important}
+.dataTables_wrapper .dataTables_length select{font-size:12px!important;padding:3px!important}
+.dataTables_wrapper .dataTables_paginate .paginate_button{padding:4px 10px!important;font-size:12px!important;min-width:auto!important}
 }
 
 @media(max-width:480px){
-body{padding:10px;padding-bottom:40px}
+body{padding:10px;padding-bottom:45px}
 h2{font-size:1em}
+h3{font-size:0.95em;margin:12px 0 8px}
 #jam{font-size:1em}
 table.dataTable{font-size:12px;min-width:520px}
 table.dataTable thead th{padding:6px 4px}
 table.dataTable tbody td{padding:5px 4px}
 .theme-toggle-btn{width:36px;height:36px;font-size:1.2em}
-.card-chart{height:260px}
-.card-calendar{height:350px}
-#tradingview_chart{height:280px!important}
+.container-flex{gap:12px}
+.card{padding:8px}
+.card-usd{min-height:280px}
+.card-info{min-height:260px}
+.card-chart{height:340px}
+.card-chart iframe{height:400px!important;margin-top:-58px}
+.card-calendar{height:400px}
+.tradingview-wrapper{height:300px}
 #footerApp{padding:5px 0}
 .marquee-text{font-size:12px}
 .dataTables_wrapper .dataTables_length,
 .dataTables_wrapper .dataTables_filter,
 .dataTables_wrapper .dataTables_info,
-.dataTables_wrapper .dataTables_paginate{font-size:10px!important}
-.dataTables_wrapper .dataTables_filter input{width:100px!important;font-size:10px!important}
-.dataTables_wrapper .dataTables_length select{font-size:10px!important}
-.dataTables_wrapper .dataTables_paginate .paginate_button{padding:2px 6px!important;font-size:10px!important}
+.dataTables_wrapper .dataTables_paginate{font-size:11px!important}
+.dataTables_wrapper .dataTables_filter input{width:110px!important;font-size:11px!important}
+.dataTables_wrapper .dataTables_length select{font-size:11px!important}
+.dataTables_wrapper .dataTables_paginate .paginate_button{padding:3px 8px!important;font-size:11px!important}
+#priceList{max-height:200px}
 }
 </style>
 </head>
@@ -301,10 +315,10 @@ table.dataTable tbody td{padding:5px 4px}
 <tbody></tbody>
 </table>
 </div>
-<div style="margin-top:40px">
+<div class="tradingview-section">
 <h3>Chart Harga Emas (XAU/USD)</h3>
-<div id="tradingview_chart"></div>
-</div></div>
+<div class="tradingview-wrapper" id="tradingview_chart"></div>
+</div>
 <div class="container-flex">
 <div>
 <h3>Harga USD/IDR Google Finance</h3>
@@ -343,7 +357,27 @@ table.dataTable tbody td{padding:5px 4px}
 <script src="https://s3.tradingview.com/tv.js"></script>
 <script>
 var isDark=localStorage.getItem('theme')==='dark';
-new TradingView.widget({width:"100%",height:400,symbol:"OANDA:XAUUSD",interval:"15",timezone:"Asia/Jakarta",theme:isDark?'dark':'light',style:"1",locale:"id",toolbar_bg:"#f1f3f6",enable_publishing:false,hide_top_toolbar:false,save_image:false,container_id:"tradingview_chart"});
+
+function createTradingViewWidget(){
+var wrapper=document.getElementById('tradingview_chart');
+var h=wrapper.offsetHeight||400;
+new TradingView.widget({
+width:"100%",
+height:h,
+symbol:"OANDA:XAUUSD",
+interval:"15",
+timezone:"Asia/Jakarta",
+theme:isDark?'dark':'light',
+style:"1",
+locale:"id",
+toolbar_bg:"#f1f3f6",
+enable_publishing:false,
+hide_top_toolbar:false,
+save_image:false,
+container_id:"tradingview_chart"
+});
+}
+createTradingViewWidget();
 
 var table=$('#tabel').DataTable({pageLength:4,lengthMenu:[4,8,18,48,88,888,1441],order:[],columns:[{data:"waktu"},{data:"all"},{data:"jt20"},{data:"jt30"}],language:{emptyTable:"Menunggu data harga emas dari Treasury...",zeroRecords:"Tidak ada data yang cocok"}});
 
@@ -357,7 +391,7 @@ var ws,ra=0;function conn(){var pr=location.protocol==="https:"?"wss:":"ws:";ws=
 
 function updateJam(){var n=new Date();var tgl=n.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});var jam=n.toLocaleTimeString('id-ID',{hour12:false});document.getElementById("jam").textContent=tgl+" "+jam+" WIB"}setInterval(updateJam,1000);updateJam();
 
-function toggleTheme(){var b=document.body,btn=document.getElementById('themeBtn');b.classList.toggle('dark-mode');if(b.classList.contains('dark-mode')){btn.textContent="☀️";localStorage.setItem('theme','dark')}else{btn.textContent="🌙";localStorage.setItem('theme','light')}}
+function toggleTheme(){var b=document.body,btn=document.getElementById('themeBtn');b.classList.toggle('dark-mode');isDark=b.classList.contains('dark-mode');if(isDark){btn.textContent="☀️";localStorage.setItem('theme','dark')}else{btn.textContent="🌙";localStorage.setItem('theme','light')}document.getElementById('tradingview_chart').innerHTML='';createTradingViewWidget()}
 (function(){if(localStorage.getItem('theme')==='dark'){document.body.classList.add('dark-mode');document.getElementById('themeBtn').textContent="☀️"}})();
 </script>
 </body>
