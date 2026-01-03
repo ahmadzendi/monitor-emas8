@@ -28,8 +28,10 @@ treasury_info_update_event = asyncio.Event()
 telegram_app = None
 http_client: Optional[httpx.AsyncClient] = None
 
+
 def format_rupiah(n: int) -> str:
     return f"{n:,}".replace(",", ".")
+
 
 def calc_profit(h: dict, modal: int, pokok: int) -> str:
     try:
@@ -42,6 +44,7 @@ def calc_profit(h: dict, modal: int, pokok: int) -> str:
     except:
         return "-"
 
+
 def build_history_data() -> List[dict]:
     return [{
         "buying_rate": format_rupiah(h["buying_rate"]),
@@ -52,8 +55,10 @@ def build_history_data() -> List[dict]:
         "jt30": calc_profit(h, 30000000, 28980000)
     } for h in history]
 
+
 def build_usd_idr_data() -> List[dict]:
     return [{"price": h["price"], "time": h["time"]} for h in usd_idr_history]
+
 
 async def get_http_client() -> httpx.AsyncClient:
     global http_client
@@ -65,23 +70,30 @@ async def get_http_client() -> httpx.AsyncClient:
         )
     return http_client
 
+
 async def close_http_client():
     global http_client
     if http_client and not http_client.is_closed:
         await http_client.aclose()
         http_client = None
 
+
 async def fetch_treasury_price() -> Optional[dict]:
     try:
         client = await get_http_client()
         r = await client.post(
             "https://api.treasury.id/api/v1/antigrvty/gold/rate",
-            headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json",
-                     "Content-Type": "application/json", "Origin": "https://treasury.id"}
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Origin": "https://treasury.id"
+            }
         )
         return r.json() if r.status_code == 200 else None
     except:
         return None
+
 
 async def fetch_usd_idr_price() -> Optional[str]:
     try:
@@ -99,6 +111,7 @@ async def fetch_usd_idr_price() -> Optional[str]:
         pass
     return None
 
+
 async def api_loop():
     global last_buy, shown_updates
     await asyncio.sleep(1)
@@ -107,11 +120,18 @@ async def api_loop():
             result = await fetch_treasury_price()
             if result:
                 data = result.get("data", {})
-                buy, sell, upd = data.get("buying_rate"), data.get("selling_rate"), data.get("updated_at")
+                buy = data.get("buying_rate")
+                sell = data.get("selling_rate")
+                upd = data.get("updated_at")
                 if buy and sell and upd and upd not in shown_updates:
                     buy, sell = int(float(buy)), int(float(sell))
                     status = "➖" if last_buy is None else ("🚀" if buy > last_buy else "🔻" if buy < last_buy else "➖")
-                    history.append({"buying_rate": buy, "selling_rate": sell, "status": status, "created_at": upd})
+                    history.append({
+                        "buying_rate": buy,
+                        "selling_rate": sell,
+                        "status": status,
+                        "created_at": upd
+                    })
                     last_buy = buy
                     shown_updates.add(upd)
                     if len(shown_updates) > 5000:
@@ -122,6 +142,7 @@ async def api_loop():
             break
         except:
             await asyncio.sleep(1)
+
 
 async def usd_idr_loop():
     await asyncio.sleep(2)
@@ -138,6 +159,7 @@ async def usd_idr_loop():
         except:
             await asyncio.sleep(2)
 
+
 async def start_telegram_bot():
     global telegram_app, treasury_info
     try:
@@ -146,11 +168,14 @@ async def start_telegram_bot():
         from telegram.ext import ContextTypes
     except ImportError:
         return None
+
     token = os.environ.get("TELEGRAM_TOKEN")
     if not token:
         return None
+
     async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Bot aktif! Gunakan /atur <teks>")
+
     async def atur_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         global treasury_info
         text = update.message.text.partition(' ')[2]
@@ -160,6 +185,7 @@ async def start_telegram_bot():
             await update.message.reply_text("Info Treasury diubah!")
         else:
             await update.message.reply_text("Gunakan: /atur <kalimat>")
+
     try:
         telegram_app = ApplicationBuilder().token(token).build()
         telegram_app.add_handler(CommandHandler("start", start_handler))
@@ -170,6 +196,7 @@ async def start_telegram_bot():
         return telegram_app
     except:
         return None
+
 
 async def stop_telegram_bot():
     global telegram_app
@@ -182,6 +209,7 @@ async def stop_telegram_bot():
             pass
         telegram_app = None
 
+
 HTML_TEMPLATE = r"""<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -191,7 +219,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"/>
 <style>
 *{box-sizing:border-box}
-body{font-family:Arial,sans-serif;margin:0;padding:40px;background:#fff;color:#222;transition:background .3s,color .3s}
+body{font-family:Arial,sans-serif;margin:0;padding:5px 20px 0 20px;background:#fff;color:#222;transition:background .3s,color .3s}
 h2{margin:0 0 2px}
 h3{margin:20px 0 10px}
 .header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px}
@@ -233,12 +261,14 @@ th.profit,td.profit{width:154px;min-width:80px;max-width:160px;text-align:left}
 .loading-text{color:#999;font-style:italic}
 .tbl-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .dataTables_wrapper{position:relative}
-.dt-top-controls{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding:8px 0}
-.dataTables_wrapper .dataTables_length{margin:0!important;float:none!important}
+.dt-top-controls{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:0!important;padding:8px 0;padding-bottom:0!important}
+.dataTables_wrapper .dataTables_length{margin:0!important;float:none!important;margin-bottom:0!important;padding-bottom:0!important}
 .dataTables_wrapper .dataTables_filter{margin:0!important;float:none!important}
 .dataTables_wrapper .dataTables_info{display:none!important}
 .dataTables_wrapper .dataTables_paginate{margin-top:10px!important;text-align:center!important}
-.tradingview-section{margin-top:40px;clear:both}
+.tbl-wrap{margin-top:0!important;padding-top:0!important}
+#tabel.dataTable{margin-top:0!important}
+.tradingview-section{margin-top:0px;clear:both}
 .tradingview-wrapper{height:400px;overflow:hidden;border:1px solid #ccc;border-radius:6px}
 .tradingview-wrapper iframe{width:100%;height:100%;border:0}
 @media(max-width:768px){
@@ -352,39 +382,9 @@ table.dataTable tbody td{padding:5px 4px}
 <script src="https://s3.tradingview.com/tv.js"></script>
 <script>
 var isDark=localStorage.getItem('theme')==='dark';
-function createTradingViewWidget(){
-var wrapper=document.getElementById('tradingview_chart');
-var h=wrapper.offsetHeight||400;
-new TradingView.widget({
-width:"100%",
-height:h,
-symbol:"OANDA:XAUUSD",
-interval:"15",
-timezone:"Asia/Jakarta",
-theme:isDark?'dark':'light',
-style:"1",
-locale:"id",
-toolbar_bg:"#f1f3f6",
-enable_publishing:false,
-hide_top_toolbar:false,
-save_image:false,
-container_id:"tradingview_chart"
-});
-}
+function createTradingViewWidget(){var wrapper=document.getElementById('tradingview_chart');var h=wrapper.offsetHeight||400;new TradingView.widget({width:"100%",height:h,symbol:"OANDA:XAUUSD",interval:"15",timezone:"Asia/Jakarta",theme:isDark?'dark':'light',style:"1",locale:"id",toolbar_bg:"#f1f3f6",enable_publishing:false,hide_top_toolbar:false,save_image:false,container_id:"tradingview_chart"})}
 createTradingViewWidget();
-var table=$('#tabel').DataTable({
-pageLength:4,
-lengthMenu:[4,8,18,48,88,888,1441],
-order:[],
-dom:'<"dt-top-controls"lf>t<"bottom"p><"clear">',
-columns:[{data:"waktu"},{data:"all"},{data:"jt20"},{data:"jt30"}],
-language:{
-emptyTable:"Menunggu data harga emas dari Treasury...",
-zeroRecords:"Tidak ada data yang cocok",
-lengthMenu:"Show _MENU_",
-search:"Search:"
-}
-});
+var table=$('#tabel').DataTable({pageLength:4,lengthMenu:[4,8,18,48,88,888,1441],order:[],dom:'<"dt-top-controls"lf>t<"bottom"p><"clear">',columns:[{data:"waktu"},{data:"all"},{data:"jt20"},{data:"jt30"}],language:{emptyTable:"Menunggu data harga emas dari Treasury...",zeroRecords:"Tidak ada data yang cocok",lengthMenu:"Show _MENU_",search:"Search:"}});
 function updateTable(h){if(!h||!h.length)return;h.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at)});var arr=h.map(function(d){return{waktu:d.created_at,all:(d.status||"➖")+" | Harga Beli: "+d.buying_rate+" | Jual: "+d.selling_rate,jt20:d.jt20,jt30:d.jt30}});table.clear().rows.add(arr).draw(false);table.page('first').draw(false)}
 function updateUsd(h){var c=document.getElementById("currentPrice"),p=document.getElementById("priceList");if(!h||!h.length){c.textContent="Menunggu data...";c.className="loading-text";p.innerHTML='<li class="loading-text">Menunggu data...</li>';return}c.className="";function prs(s){return parseFloat(s.trim().replace(/\./g,'').replace(',','.'))}var r=h.slice().reverse();var icon="➖";if(r.length>1){var n=prs(r[0].price),pr=prs(r[1].price);icon=n>pr?"🚀":n<pr?"🔻":"➖"}c.innerHTML=r[0].price+" "+icon;p.innerHTML="";for(var i=0;i<r.length;i++){var ic="➖";if(i===0&&r.length>1){var n=prs(r[0].price),pr=prs(r[1].price);ic=n>pr?"🟢":n<pr?"🔴":"➖"}else if(i<r.length-1){var n=prs(r[i].price),nx=prs(r[i+1].price);ic=n>nx?"🟢":n<nx?"🔴":"➖"}var li=document.createElement("li");li.innerHTML=r[i].price+' <span class="time">('+r[i].time+')</span> '+ic;p.appendChild(li)}}
 function updateInfo(i){document.getElementById("isiTreasury").innerHTML=i||"Belum ada info treasury."}
@@ -396,26 +396,33 @@ function toggleTheme(){var b=document.body,btn=document.getElementById('themeBtn
 </body>
 </html>"""
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    t1, t2 = asyncio.create_task(api_loop()), asyncio.create_task(usd_idr_loop())
+    t1 = asyncio.create_task(api_loop())
+    t2 = asyncio.create_task(usd_idr_loop())
     await start_telegram_bot()
     yield
-    t1.cancel(); t2.cancel()
+    t1.cancel()
+    t2.cancel()
     await stop_telegram_bot()
     await close_http_client()
     await asyncio.gather(t1, t2, return_exceptions=True)
 
+
 app = FastAPI(title="Gold Monitor", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=500)
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
     return HTMLResponse(content=HTML_TEMPLATE)
 
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "h": len(history), "u": len(usd_idr_history)}
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
@@ -424,29 +431,47 @@ async def websocket_endpoint(ws: WebSocket):
     last_u = usd_idr_history[-1]["price"] if usd_idr_history else None
     last_t = treasury_info
     try:
-        await ws.send_text(json.dumps({"history": build_history_data(), "usd_idr_history": build_usd_idr_data(), "treasury_info": treasury_info}))
+        await ws.send_text(json.dumps({
+            "history": build_history_data(),
+            "usd_idr_history": build_usd_idr_data(),
+            "treasury_info": treasury_info
+        }))
         while True:
-            tasks = [asyncio.create_task(update_event.wait()), asyncio.create_task(usd_idr_update_event.wait()), asyncio.create_task(treasury_info_update_event.wait())]
+            tasks = [
+                asyncio.create_task(update_event.wait()),
+                asyncio.create_task(usd_idr_update_event.wait()),
+                asyncio.create_task(treasury_info_update_event.wait())
+            ]
             done, pending = await asyncio.wait(tasks, timeout=30.0, return_when=asyncio.FIRST_COMPLETED)
             for t in pending:
                 t.cancel()
-                try: await t
-                except asyncio.CancelledError: pass
-            if update_event.is_set(): update_event.clear()
-            if usd_idr_update_event.is_set(): usd_idr_update_event.clear()
-            if treasury_info_update_event.is_set(): treasury_info_update_event.clear()
+                try:
+                    await t
+                except asyncio.CancelledError:
+                    pass
+            if update_event.is_set():
+                update_event.clear()
+            if usd_idr_update_event.is_set():
+                usd_idr_update_event.clear()
+            if treasury_info_update_event.is_set():
+                treasury_info_update_event.clear()
             curr_h = history[-1]["created_at"] if history else None
             curr_u = usd_idr_history[-1]["price"] if usd_idr_history else None
             curr_t = treasury_info
             if curr_h != last_h or curr_u != last_u or curr_t != last_t:
                 last_h, last_u, last_t = curr_h, curr_u, curr_t
-                await ws.send_text(json.dumps({"history": build_history_data(), "usd_idr_history": build_usd_idr_data(), "treasury_info": treasury_info}))
+                await ws.send_text(json.dumps({
+                    "history": build_history_data(),
+                    "usd_idr_history": build_usd_idr_data(),
+                    "treasury_info": treasury_info
+                }))
             else:
                 await ws.send_text('{"ping":true}')
     except WebSocketDisconnect:
         pass
     except:
         pass
+
 
 if __name__ == "__main__":
     import uvicorn
