@@ -12,7 +12,6 @@ from fastapi.middleware.gzip import GZipMiddleware
 import httpx
 from bs4 import BeautifulSoup
 
-# ============== Global State ==============
 MAX_HISTORY = 1441
 MAX_USD_HISTORY = 11
 
@@ -29,7 +28,6 @@ treasury_info_update_event = asyncio.Event()
 telegram_app = None
 http_client: Optional[httpx.AsyncClient] = None
 
-# ============== Utility Functions ==============
 def format_rupiah(n: int) -> str:
     return f"{n:,}".replace(",", ".")
 
@@ -57,7 +55,6 @@ def build_history_data() -> List[dict]:
 def build_usd_idr_data() -> List[dict]:
     return [{"price": h["price"], "time": h["time"]} for h in usd_idr_history]
 
-# ============== HTTP Client ==============
 async def get_http_client() -> httpx.AsyncClient:
     global http_client
     if http_client is None or http_client.is_closed:
@@ -74,7 +71,6 @@ async def close_http_client():
         await http_client.aclose()
         http_client = None
 
-# ============== API Functions ==============
 async def fetch_treasury_price() -> Optional[dict]:
     try:
         client = await get_http_client()
@@ -103,7 +99,6 @@ async def fetch_usd_idr_price() -> Optional[str]:
         pass
     return None
 
-# ============== Background Tasks ==============
 async def api_loop():
     global last_buy, shown_updates
     await asyncio.sleep(1)
@@ -143,7 +138,6 @@ async def usd_idr_loop():
         except:
             await asyncio.sleep(2)
 
-# ============== Telegram Bot ==============
 async def start_telegram_bot():
     global telegram_app, treasury_info
     try:
@@ -188,7 +182,6 @@ async def stop_telegram_bot():
             pass
         telegram_app = None
 
-# ============== HTML Template ==============
 HTML_TEMPLATE = r"""<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -199,10 +192,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <style>
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;margin:0;padding:40px;background:#fff;color:#222;transition:background .3s,color .3s}
-h2{margin:0 0 10px}
+h2{margin:0 0 2px}
 h3{margin:20px 0 10px}
-.header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-#jam{font-size:1.3em;color:#ff1744;font-weight:bold;margin-bottom:15px}
+.header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px}
+#jam{font-size:1.3em;color:#ff1744;font-weight:bold;margin-bottom:8px}
 table.dataTable{width:100%!important}
 table.dataTable thead th{font-weight:bold;white-space:nowrap;padding:10px 8px}
 table.dataTable tbody td{padding:8px;white-space:nowrap}
@@ -239,17 +232,21 @@ th.profit,td.profit{width:154px;min-width:80px;max-width:160px;text-align:left}
 @keyframes marquee{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
 .loading-text{color:#999;font-style:italic}
 .tbl-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
-
-/* TradingView Chart Container - Fixed Height */
+.dataTables_wrapper{position:relative}
+.dt-top-controls{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding:8px 0}
+.dataTables_wrapper .dataTables_length{margin:0!important;float:none!important}
+.dataTables_wrapper .dataTables_filter{margin:0!important;float:none!important}
+.dataTables_wrapper .dataTables_info{display:none!important}
+.dataTables_wrapper .dataTables_paginate{margin-top:10px!important;text-align:center!important}
 .tradingview-section{margin-top:40px;clear:both}
 .tradingview-wrapper{height:400px;overflow:hidden;border:1px solid #ccc;border-radius:6px}
 .tradingview-wrapper iframe{width:100%;height:100%;border:0}
-
 @media(max-width:768px){
 body{padding:12px;padding-bottom:50px}
 h2{font-size:1.1em}
 h3{font-size:1em;margin:15px 0 8px}
-#jam{font-size:1.1em;margin-bottom:10px}
+.header{margin-bottom:2px}
+#jam{font-size:1.5em;margin-bottom:6px}
 table.dataTable{font-size:13px;min-width:580px}
 table.dataTable thead th{padding:8px 6px}
 table.dataTable tbody td{padding:6px}
@@ -262,22 +259,22 @@ table.dataTable tbody td{padding:6px}
 .card-chart iframe{height:440px!important;margin-top:-60px}
 .card-calendar{height:450px}
 .card-calendar iframe{height:100%!important}
+.tradingview-section{margin-top:15px}
+.tradingview-section h3{margin:10px 0 8px}
 .tradingview-wrapper{height:350px}
-.dataTables_wrapper .dataTables_length,
-.dataTables_wrapper .dataTables_filter,
-.dataTables_wrapper .dataTables_info,
-.dataTables_wrapper .dataTables_paginate{text-align:left!important;float:none!important;font-size:12px!important;margin:5px 0!important}
-.dataTables_wrapper .dataTables_filter{margin-top:8px!important}
-.dataTables_wrapper .dataTables_filter input{width:140px!important;font-size:12px!important;padding:4px 6px!important}
+.dt-top-controls{flex-direction:row;justify-content:space-between;gap:5px;margin-bottom:8px;padding:5px 0}
+.dataTables_wrapper .dataTables_length{font-size:12px!important}
+.dataTables_wrapper .dataTables_filter{font-size:12px!important}
+.dataTables_wrapper .dataTables_filter input{width:100px!important;font-size:12px!important;padding:4px 6px!important}
 .dataTables_wrapper .dataTables_length select{font-size:12px!important;padding:3px!important}
 .dataTables_wrapper .dataTables_paginate .paginate_button{padding:4px 10px!important;font-size:12px!important;min-width:auto!important}
 }
-
 @media(max-width:480px){
 body{padding:10px;padding-bottom:45px}
 h2{font-size:1em}
 h3{font-size:0.95em;margin:12px 0 8px}
-#jam{font-size:1em}
+.header{margin-bottom:1px}
+#jam{font-size:1.3em;margin-bottom:5px}
 table.dataTable{font-size:12px;min-width:520px}
 table.dataTable thead th{padding:6px 4px}
 table.dataTable tbody td{padding:5px 4px}
@@ -289,14 +286,14 @@ table.dataTable tbody td{padding:5px 4px}
 .card-chart{height:340px}
 .card-chart iframe{height:400px!important;margin-top:-58px}
 .card-calendar{height:400px}
+.tradingview-section{margin-top:12px}
+.tradingview-section h3{margin:8px 0 6px}
 .tradingview-wrapper{height:300px}
 #footerApp{padding:5px 0}
 .marquee-text{font-size:12px}
-.dataTables_wrapper .dataTables_length,
-.dataTables_wrapper .dataTables_filter,
-.dataTables_wrapper .dataTables_info,
-.dataTables_wrapper .dataTables_paginate{font-size:11px!important}
-.dataTables_wrapper .dataTables_filter input{width:110px!important;font-size:11px!important}
+.dt-top-controls{gap:3px;margin-bottom:6px}
+.dataTables_wrapper .dataTables_length,.dataTables_wrapper .dataTables_filter{font-size:11px!important}
+.dataTables_wrapper .dataTables_filter input{width:80px!important;font-size:11px!important}
 .dataTables_wrapper .dataTables_length select{font-size:11px!important}
 .dataTables_wrapper .dataTables_paginate .paginate_button{padding:3px 8px!important;font-size:11px!important}
 #priceList{max-height:200px}
@@ -334,7 +331,6 @@ table.dataTable tbody td{padding:5px 4px}
 <iframe class="chart-iframe" src="https://sslcharts.investing.com/index.php?force_lang=54&pair_ID=2138&timescale=900&candles=80&style=candles" height="430" style="margin-top:-62px" loading="lazy"></iframe>
 </div>
 </div>
-
 </div>
 <div class="container-flex">
 <div>
@@ -349,7 +345,6 @@ table.dataTable tbody td{padding:5px 4px}
 <iframe class="chart-iframe" src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&category=_employment,_economicActivity,_inflation,_centralBanks,_confidenceIndex&importance=3&features=datepicker,timezone,timeselector,filters&countries=5,37,48,35,17,36,26,12,72&calType=week&timeZone=27&lang=54" height="467" loading="lazy"></iframe>
 </div>
 </div>
-
 </div>
 <footer id="footerApp"><span class="marquee-text">&copy;2025 ~ahmadkholil~</span></footer>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -357,7 +352,6 @@ table.dataTable tbody td{padding:5px 4px}
 <script src="https://s3.tradingview.com/tv.js"></script>
 <script>
 var isDark=localStorage.getItem('theme')==='dark';
-
 function createTradingViewWidget(){
 var wrapper=document.getElementById('tradingview_chart');
 var h=wrapper.offsetHeight||400;
@@ -378,26 +372,30 @@ container_id:"tradingview_chart"
 });
 }
 createTradingViewWidget();
-
-var table=$('#tabel').DataTable({pageLength:4,lengthMenu:[4,8,18,48,88,888,1441],order:[],columns:[{data:"waktu"},{data:"all"},{data:"jt20"},{data:"jt30"}],language:{emptyTable:"Menunggu data harga emas dari Treasury...",zeroRecords:"Tidak ada data yang cocok"}});
-
+var table=$('#tabel').DataTable({
+pageLength:4,
+lengthMenu:[4,8,18,48,88,888,1441],
+order:[],
+dom:'<"dt-top-controls"lf>t<"bottom"p><"clear">',
+columns:[{data:"waktu"},{data:"all"},{data:"jt20"},{data:"jt30"}],
+language:{
+emptyTable:"Menunggu data harga emas dari Treasury...",
+zeroRecords:"Tidak ada data yang cocok",
+lengthMenu:"Show _MENU_",
+search:"Search:"
+}
+});
 function updateTable(h){if(!h||!h.length)return;h.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at)});var arr=h.map(function(d){return{waktu:d.created_at,all:(d.status||"➖")+" | Harga Beli: "+d.buying_rate+" | Jual: "+d.selling_rate,jt20:d.jt20,jt30:d.jt30}});table.clear().rows.add(arr).draw(false);table.page('first').draw(false)}
-
 function updateUsd(h){var c=document.getElementById("currentPrice"),p=document.getElementById("priceList");if(!h||!h.length){c.textContent="Menunggu data...";c.className="loading-text";p.innerHTML='<li class="loading-text">Menunggu data...</li>';return}c.className="";function prs(s){return parseFloat(s.trim().replace(/\./g,'').replace(',','.'))}var r=h.slice().reverse();var icon="➖";if(r.length>1){var n=prs(r[0].price),pr=prs(r[1].price);icon=n>pr?"🚀":n<pr?"🔻":"➖"}c.innerHTML=r[0].price+" "+icon;p.innerHTML="";for(var i=0;i<r.length;i++){var ic="➖";if(i===0&&r.length>1){var n=prs(r[0].price),pr=prs(r[1].price);ic=n>pr?"🟢":n<pr?"🔴":"➖"}else if(i<r.length-1){var n=prs(r[i].price),nx=prs(r[i+1].price);ic=n>nx?"🟢":n<nx?"🔴":"➖"}var li=document.createElement("li");li.innerHTML=r[i].price+' <span class="time">('+r[i].time+')</span> '+ic;p.appendChild(li)}}
-
 function updateInfo(i){document.getElementById("isiTreasury").innerHTML=i||"Belum ada info treasury."}
-
 var ws,ra=0;function conn(){var pr=location.protocol==="https:"?"wss:":"ws:";ws=new WebSocket(pr+"//"+location.host+"/ws");ws.onopen=function(){ra=0};ws.onmessage=function(e){try{var d=JSON.parse(e.data);if(d.ping)return;if(d.history)updateTable(d.history);if(d.usd_idr_history)updateUsd(d.usd_idr_history);if(d.treasury_info!==undefined)updateInfo(d.treasury_info)}catch(x){}};ws.onclose=function(){ra++;setTimeout(conn,Math.min(1000*Math.pow(1.5,ra-1),30000))};ws.onerror=function(){}}conn();
-
-function updateJam(){var n=new Date();var tgl=n.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});var jam=n.toLocaleTimeString('id-ID',{hour12:false});document.getElementById("jam").textContent=tgl+" "+jam+" WIB"}setInterval(updateJam,1000);updateJam();
-
+function updateJam(){var n=new Date();var tgl=n.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});var jam=n.toLocaleTimeString('id-ID',{hour12:false});document.getElementById("jam").textContent=tgl+" "+jam+" WIB "}setInterval(updateJam,1000);updateJam();
 function toggleTheme(){var b=document.body,btn=document.getElementById('themeBtn');b.classList.toggle('dark-mode');isDark=b.classList.contains('dark-mode');if(isDark){btn.textContent="☀️";localStorage.setItem('theme','dark')}else{btn.textContent="🌙";localStorage.setItem('theme','light')}document.getElementById('tradingview_chart').innerHTML='';createTradingViewWidget()}
 (function(){if(localStorage.getItem('theme')==='dark'){document.body.classList.add('dark-mode');document.getElementById('themeBtn').textContent="☀️"}})();
 </script>
 </body>
 </html>"""
 
-# ============== FastAPI Application ==============
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     t1, t2 = asyncio.create_task(api_loop()), asyncio.create_task(usd_idr_loop())
