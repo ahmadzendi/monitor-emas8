@@ -44,15 +44,20 @@ def get_day_time(date_str: str) -> str:
         return date_str
 
 
-def format_waktu_with_diff(date_str: str, diff: int, status: str) -> str:
-    """Format waktu dengan icon dan selisih harga"""
+def format_waktu_only(date_str: str, status: str) -> str:
+    """Format waktu dengan icon saja (tanpa selisih harga)"""
     day_time = get_day_time(date_str)
+    return f"{day_time}{status}"
+
+
+def format_diff_display(diff: int, status: str) -> str:
+    """Format selisih harga dengan icon untuk kolom Data Transaksi"""
     if status == "🚀":
-        return f"{day_time}🚀+{format_rupiah(diff)}"
+        return f"🚀+{format_rupiah(diff)}"
     elif status == "🔻":
-        return f"{day_time}🔻-{format_rupiah(abs(diff))}"
+        return f"🔻-{format_rupiah(abs(diff))}"
     else:
-        return f"{day_time}➖tetap"
+        return "➖tetap"
 
 
 def calc_profit(h: dict, modal: int, pokok: int) -> str:
@@ -71,7 +76,8 @@ def build_history_data() -> List[dict]:
     return [{
         "buying_rate": format_rupiah(h["buying_rate"]),
         "selling_rate": format_rupiah(h["selling_rate"]),
-        "waktu_display": format_waktu_with_diff(h["created_at"], h.get("diff", 0), h["status"]),
+        "waktu_display": format_waktu_only(h["created_at"], h["status"]),
+        "diff_display": format_diff_display(h.get("diff", 0), h["status"]),
         "created_at": h["created_at"],
         "jt20": calc_profit(h, 20000000, 19315000),
         "jt30": calc_profit(h, 30000000, 28980000)
@@ -274,7 +280,7 @@ th.profit,td.profit{width:154px;min-width:80px;max-width:160px;text-align:left}
 .dark-mode #tabel tbody tr:first-child td{color:#00E124!important}
 #isiTreasury{white-space:pre-line;color:red;font-weight:bold;max-height:376px;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;word-break:break-word}
 #isiTreasury::-webkit-scrollbar{display:none}
-.dark-mode #isiTreasury{color:#00E124;text-shadow:1px 1px #00B31C}
+.dark-mode #isiTreasury{color:#00E124}
 .chart-iframe{border:0;width:100%;display:block}
 #footerApp{width:100%;position:fixed;bottom:0;left:0;background:transparent;text-align:center;z-index:100;padding:8px 0}
 .marquee-text{display:inline-block;color:#F5274D;animation:marquee 70s linear infinite;font-weight:bold}
@@ -407,7 +413,7 @@ var isDark=localStorage.getItem('theme')==='dark';
 function createTradingViewWidget(){var wrapper=document.getElementById('tradingview_chart');var h=wrapper.offsetHeight||400;new TradingView.widget({width:"100%",height:h,symbol:"OANDA:XAUUSD",interval:"15",timezone:"Asia/Jakarta",theme:isDark?'dark':'light',style:"1",locale:"id",toolbar_bg:"#f1f3f6",enable_publishing:false,hide_top_toolbar:false,save_image:false,container_id:"tradingview_chart"})}
 createTradingViewWidget();
 var table=$('#tabel').DataTable({pageLength:4,lengthMenu:[4,8,18,48,88,888,1441],order:[],dom:'<"dt-top-controls"lf>t<"bottom"p><"clear">',columns:[{data:"waktu"},{data:"all"},{data:"jt20"},{data:"jt30"}],language:{emptyTable:"Menunggu data harga emas dari Treasury...",zeroRecords:"Tidak ada data yang cocok",lengthMenu:"Show _MENU_",search:"Search:"}});
-function updateTable(h){if(!h||!h.length)return;h.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at)});var arr=h.map(function(d){return{waktu:d.waktu_display,all:"Harga Beli: "+d.buying_rate+" | Jual: "+d.selling_rate,jt20:d.jt20,jt30:d.jt30}});table.clear().rows.add(arr).draw(false);table.page('first').draw(false)}
+function updateTable(h){if(!h||!h.length)return;h.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at)});var arr=h.map(function(d){return{waktu:d.waktu_display,all:"Harga Beli: "+d.buying_rate+" Jual: "+d.selling_rate+" "+d.diff_display,jt20:d.jt20,jt30:d.jt30}});table.clear().rows.add(arr).draw(false);table.page('first').draw(false)}
 function updateUsd(h){var c=document.getElementById("currentPrice"),p=document.getElementById("priceList");if(!h||!h.length){c.textContent="Menunggu data...";c.className="loading-text";p.innerHTML='<li class="loading-text">Menunggu data...</li>';return}c.className="";function prs(s){return parseFloat(s.trim().replace(/\./g,'').replace(',','.'))}var r=h.slice().reverse();var icon="➖";if(r.length>1){var n=prs(r[0].price),pr=prs(r[1].price);icon=n>pr?"🚀":n<pr?"🔻":"➖"}c.innerHTML=r[0].price+" "+icon;p.innerHTML="";for(var i=0;i<r.length;i++){var ic="➖";if(i===0&&r.length>1){var n=prs(r[0].price),pr=prs(r[1].price);ic=n>pr?"🟢":n<pr?"🔴":"➖"}else if(i<r.length-1){var n=prs(r[i].price),nx=prs(r[i+1].price);ic=n>nx?"🟢":n<nx?"🔴":"➖"}else if(r.length>1){var n=prs(r[i].price),pr=prs(r[i-1].price);ic=n<pr?"🔴":n>pr?"🟢":"➖"}var li=document.createElement("li");li.innerHTML=r[i].price+' <span class="time">('+r[i].time+')</span> '+ic;p.appendChild(li)}}
 function updateInfo(i){document.getElementById("isiTreasury").innerHTML=i||"Belum ada info treasury."}
 var ws,ra=0;function conn(){var pr=location.protocol==="https:"?"wss:":"ws:";ws=new WebSocket(pr+"//"+location.host+"/ws");ws.onopen=function(){ra=0};ws.onmessage=function(e){try{var d=JSON.parse(e.data);if(d.ping)return;if(d.history)updateTable(d.history);if(d.usd_idr_history)updateUsd(d.usd_idr_history);if(d.treasury_info!==undefined)updateInfo(d.treasury_info)}catch(x){}};ws.onclose=function(){ra++;setTimeout(conn,Math.min(1000*Math.pow(1.5,ra-1),30000))};ws.onerror=function(){}}conn();
