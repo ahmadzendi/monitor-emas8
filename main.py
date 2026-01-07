@@ -33,6 +33,29 @@ def format_rupiah(n: int) -> str:
     return f"{n:,}".replace(",", ".")
 
 
+def get_day_with_time(date_str: str) -> str:
+    days_id = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+    try:
+        dt = datetime.fromisoformat(date_str.replace('Z', '+00:00').replace(' ', 'T'))
+        day_name = days_id[dt.weekday()]
+        time_str = dt.strftime("%H:%M:%S")
+        return f"{day_name} {time_str}"
+    except:
+        try:
+            dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+            day_name = days_id[dt.weekday()]
+            time_str = dt.strftime("%H:%M:%S")
+            return f"{day_name} {time_str}"
+        except:
+            try:
+                dt = datetime.strptime(date_str[:19], "%Y-%m-%dT%H:%M:%S")
+                day_name = days_id[dt.weekday()]
+                time_str = dt.strftime("%H:%M:%S")
+                return f"{day_name} {time_str}"
+            except:
+                return date_str
+
+
 def calc_profit(h: dict, modal: int, pokok: int) -> str:
     try:
         gram = modal / h["buying_rate"]
@@ -50,7 +73,8 @@ def build_history_data() -> List[dict]:
         "buying_rate": format_rupiah(h["buying_rate"]),
         "selling_rate": format_rupiah(h["selling_rate"]),
         "status": h["status"],
-        "created_at": h["created_at"],
+        "diff": h.get("diff", 0),
+        "created_at": get_day_with_time(h["created_at"]),
         "jt20": calc_profit(h, 20000000, 19315000),
         "jt30": calc_profit(h, 30000000, 28980000)
     } for h in history]
@@ -65,7 +89,7 @@ async def get_http_client() -> httpx.AsyncClient:
     if http_client is None or http_client.is_closed:
         http_client = httpx.AsyncClient(
             timeout=httpx.Timeout(10.0, connect=5.0),
-            limits=httpx.Limits(max_keepalive_connections=20, max_connections=50),
+            limits=httpx.Limits(max_keepalive_connections=30, max_connections=60),
             follow_redirects=True
         )
     return http_client
@@ -114,7 +138,6 @@ async def fetch_usd_idr_price() -> Optional[str]:
 
 async def api_loop():
     global last_buy, shown_updates
-    await asyncio.sleep(1)
     while True:
         try:
             result = await fetch_treasury_price()
@@ -125,11 +148,25 @@ async def api_loop():
                 upd = data.get("updated_at")
                 if buy and sell and upd and upd not in shown_updates:
                     buy, sell = int(float(buy)), int(float(sell))
-                    status = "➖" if last_buy is None else ("🚀" if buy > last_buy else "🔻" if buy < last_buy else "➖")
+                    
+                    if last_buy is None:
+                        status = "➖"
+                        diff = 0
+                    elif buy > last_buy:
+                        status = "🚀"
+                        diff = buy - last_buy
+                    elif buy < last_buy:
+                        status = "🔻"
+                        diff = buy - last_buy
+                    else:
+                        status = "➖"
+                        diff = 0
+                    
                     history.append({
                         "buying_rate": buy,
                         "selling_rate": sell,
                         "status": status,
+                        "diff": diff,
                         "created_at": upd
                     })
                     last_buy = buy
@@ -137,15 +174,14 @@ async def api_loop():
                     if len(shown_updates) > 5000:
                         shown_updates = {upd}
                     update_event.set()
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.05)
         except asyncio.CancelledError:
             break
         except:
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
 
 
 async def usd_idr_loop():
-    await asyncio.sleep(2)
     while True:
         try:
             price = await fetch_usd_idr_price()
@@ -153,11 +189,11 @@ async def usd_idr_loop():
                 wib = datetime.utcnow() + timedelta(hours=7)
                 usd_idr_history.append({"price": price, "time": wib.strftime("%H:%M:%S")})
                 usd_idr_update_event.set()
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
         except asyncio.CancelledError:
             break
         except:
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
 
 
 async def start_telegram_bot():
@@ -224,11 +260,12 @@ h2{margin:0 0 2px}
 h3{margin:20px 0 10px}
 .header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px}
 #jam{font-size:1.3em;color:#ff1744;font-weight:bold;margin-bottom:8px}
-table.dataTable{width:100%!important}
-table.dataTable thead th{font-weight:bold;white-space:nowrap;padding:10px 8px}
-table.dataTable tbody td{padding:8px;white-space:nowrap}
-th.waktu,td.waktu{width:150px;min-width:100px;max-width:180px;text-align:left}
-th.profit,td.profit{width:154px;min-width:80px;max-width:160px;text-align:left}
+table.dataTable{width:100%!important;border-collapse:collapse}
+table.dataTable thead th{font-weight:bold;white-space:nowrap;padding:8px 2px}
+table.dataTable tbody td{padding:6px 2px;white-space:nowrap}
+th.waktu,td.waktu{width:105px;min-width:90px;max-width:120px;text-align:left;padding-left:4px!important}
+th.profit,td.profit{width:135px;min-width:70px;max-width:145px;text-align:left}
+th.transaksi,td.transaksi{text-align:left}
 .theme-toggle-btn{padding:0;border:none;border-radius:50%;background:#222;color:#fff;cursor:pointer;font-size:1.5em;width:44px;height:44px;display:flex;align-items:center;justify-content:center;transition:background .3s}
 .theme-toggle-btn:hover{background:#444}
 .dark-mode{background:#181a1b!important;color:#e0e0e0!important}
@@ -277,9 +314,9 @@ h2{font-size:1.1em}
 h3{font-size:1em;margin:15px 0 8px}
 .header{margin-bottom:2px}
 #jam{font-size:1.5em;margin-bottom:6px}
-table.dataTable{font-size:13px;min-width:580px}
-table.dataTable thead th{padding:8px 6px}
-table.dataTable tbody td{padding:6px}
+table.dataTable{font-size:12px;min-width:520px}
+table.dataTable thead th{font-weight:bold;white-space:nowrap;padding:10px 8px}
+table.dataTable tbody td{padding:8px;white-space:nowrap}
 .theme-toggle-btn{width:40px;height:40px;font-size:1.3em}
 .container-flex{flex-direction:column;gap:15px}
 .card-usd,.card-info,.card-chart,.card-calendar{width:100%!important;max-width:100%!important;min-width:0!important}
@@ -305,9 +342,9 @@ h2{font-size:1em}
 h3{font-size:0.95em;margin:12px 0 8px}
 .header{margin-bottom:1px}
 #jam{font-size:1.3em;margin-bottom:5px}
-table.dataTable{font-size:12px;min-width:520px}
-table.dataTable thead th{padding:6px 4px}
-table.dataTable tbody td{padding:5px 4px}
+table.dataTable{font-size:11px;min-width:480px}
+table.dataTable thead th{padding:6px 1px}
+table.dataTable tbody td{padding:5px 1px}
 .theme-toggle-btn{width:36px;height:36px;font-size:1.2em}
 .container-flex{gap:12px}
 .card{padding:8px}
@@ -338,7 +375,7 @@ table.dataTable tbody td{padding:5px 4px}
 <div id="jam"></div>
 <div class="tbl-wrap">
 <table id="tabel" class="display">
-<thead><tr><th class="waktu">Waktu</th><th>Data Transaksi</th><th class="profit">Est. cuan 20 JT ➺ gr</th><th class="profit">Est. cuan 30 JT ➺ gr</th></tr></thead>
+<thead><tr><th class="waktu">Waktu</th><th class="transaksi">Data Transaksi</th><th class="profit">Cuan 20JT➺gr</th><th class="profit">Cuan 30JT➺gr</th></tr></thead>
 <tbody></tbody>
 </table>
 </div>
@@ -376,7 +413,7 @@ table.dataTable tbody td{padding:5px 4px}
 </div>
 </div>
 </div>
-<footer id="footerApp"><span class="marquee-text">&copy;2025 ~ahmadkholil~</span></footer>
+<footer id="footerApp"><span class="marquee-text">&copy;2026 ~ahmadkholil~</span></footer>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://s3.tradingview.com/tv.js"></script>
@@ -384,8 +421,14 @@ table.dataTable tbody td{padding:5px 4px}
 var isDark=localStorage.getItem('theme')==='dark';
 function createTradingViewWidget(){var wrapper=document.getElementById('tradingview_chart');var h=wrapper.offsetHeight||400;new TradingView.widget({width:"100%",height:h,symbol:"OANDA:XAUUSD",interval:"15",timezone:"Asia/Jakarta",theme:isDark?'dark':'light',style:"1",locale:"id",toolbar_bg:"#f1f3f6",enable_publishing:false,hide_top_toolbar:false,save_image:false,container_id:"tradingview_chart"})}
 createTradingViewWidget();
+function formatRp(n){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,".")}
+function formatDiff(status,diff){
+if(status==="🚀")return"🚀+"+formatRp(diff)+"🚀";
+else if(status==="🔻")return"🔻-"+formatRp(Math.abs(diff))+"🔻";
+else return"➖Tetap➖";
+}
 var table=$('#tabel').DataTable({pageLength:4,lengthMenu:[4,8,18,48,88,888,1441],order:[],dom:'<"dt-top-controls"lf>t<"bottom"p><"clear">',columns:[{data:"waktu"},{data:"all"},{data:"jt20"},{data:"jt30"}],language:{emptyTable:"Menunggu data harga emas dari Treasury...",zeroRecords:"Tidak ada data yang cocok",lengthMenu:"Show _MENU_",search:"Search:"}});
-function updateTable(h){if(!h||!h.length)return;h.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at)});var arr=h.map(function(d){return{waktu:d.created_at,all:(d.status||"➖")+" | Harga Beli: "+d.buying_rate+" | Jual: "+d.selling_rate,jt20:d.jt20,jt30:d.jt30}});table.clear().rows.add(arr).draw(false);table.page('first').draw(false)}
+function updateTable(h){if(!h||!h.length)return;h.sort(function(a,b){var dayOrder={Senin:1,Selasa:2,Rabu:3,Kamis:4,Jumat:5,Sabtu:6,Minggu:7};var dayA=a.created_at.split(' ')[0];var dayB=b.created_at.split(' ')[0];var timeA=a.created_at.split(' ')[1]||'';var timeB=b.created_at.split(' ')[1]||'';if(dayOrder[dayA]!==dayOrder[dayB])return dayOrder[dayB]-dayOrder[dayA];return timeB.localeCompare(timeA)});var arr=h.map(function(d){var diffText=formatDiff(d.status,d.diff);return{waktu:d.created_at,all:diffText+" Harga Beli:"+d.buying_rate+" Jual:"+d.selling_rate,jt20:d.jt20,jt30:d.jt30}});table.clear().rows.add(arr).draw(false);table.page('first').draw(false)}
 function updateUsd(h){var c=document.getElementById("currentPrice"),p=document.getElementById("priceList");if(!h||!h.length){c.textContent="Menunggu data...";c.className="loading-text";p.innerHTML='<li class="loading-text">Menunggu data...</li>';return}c.className="";function prs(s){return parseFloat(s.trim().replace(/\./g,'').replace(',','.'))}var r=h.slice().reverse();var icon="➖";if(r.length>1){var n=prs(r[0].price),pr=prs(r[1].price);icon=n>pr?"🚀":n<pr?"🔻":"➖"}c.innerHTML=r[0].price+" "+icon;p.innerHTML="";for(var i=0;i<r.length;i++){var ic="➖";if(i===0&&r.length>1){var n=prs(r[0].price),pr=prs(r[1].price);ic=n>pr?"🟢":n<pr?"🔴":"➖"}else if(i<r.length-1){var n=prs(r[i].price),nx=prs(r[i+1].price);ic=n>nx?"🟢":n<nx?"🔴":"➖"}else if(r.length>1){var n=prs(r[i].price),pr=prs(r[i-1].price);ic=n<pr?"🔴":n>pr?"🟢":"➖"}var li=document.createElement("li");li.innerHTML=r[i].price+' <span class="time">('+r[i].time+')</span> '+ic;p.appendChild(li)}}
 function updateInfo(i){document.getElementById("isiTreasury").innerHTML=i||"Belum ada info treasury."}
 var ws,ra=0;function conn(){var pr=location.protocol==="https:"?"wss:":"ws:";ws=new WebSocket(pr+"//"+location.host+"/ws");ws.onopen=function(){ra=0};ws.onmessage=function(e){try{var d=JSON.parse(e.data);if(d.ping)return;if(d.history)updateTable(d.history);if(d.usd_idr_history)updateUsd(d.usd_idr_history);if(d.treasury_info!==undefined)updateInfo(d.treasury_info)}catch(x){}};ws.onclose=function(){ra++;setTimeout(conn,Math.min(1000*Math.pow(1.5,ra-1),30000))};ws.onerror=function(){}}conn();
@@ -419,11 +462,6 @@ async def index():
     return HTMLResponse(content=HTML_TEMPLATE)
 
 
-@app.get("/health")
-async def health():
-    return {"status": "ok", "h": len(history), "u": len(usd_idr_history)}
-
-
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     await ws.accept()
@@ -442,7 +480,7 @@ async def websocket_endpoint(ws: WebSocket):
                 asyncio.create_task(usd_idr_update_event.wait()),
                 asyncio.create_task(treasury_info_update_event.wait())
             ]
-            done, pending = await asyncio.wait(tasks, timeout=30.0, return_when=asyncio.FIRST_COMPLETED)
+            done, pending = await asyncio.wait(tasks, timeout=15.0, return_when=asyncio.FIRST_COMPLETED)
             for t in pending:
                 t.cancel()
                 try:
