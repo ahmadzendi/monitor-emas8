@@ -360,6 +360,7 @@ h3{font-size:0.95em;margin:12px 0 8px}
 table.dataTable{font-size:12px;min-width:560px}
 table.dataTable thead th{padding:6px 4px}
 table.dataTable tbody td{padding:5px 4px}
+th.waktu, td.waktu { width: 60px; min-width: 50px; max-width: 70px; }
 .theme-toggle-btn{width:36px;height:36px;font-size:1.2em}
 .container-flex{gap:12px}
 .card{padding:8px}
