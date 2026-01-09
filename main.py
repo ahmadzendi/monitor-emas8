@@ -89,7 +89,7 @@ def build_history_data() -> List[dict]:
             format_diff_display(h.get("diff", 0), h["status"])
         ),
         "created_at": h["created_at"],
-        "jt20": calc_profit(h, 20000000, 19315000),
+        "jt20": calc_profit(h, 20000000, 19314000),
         "jt30": calc_profit(h, 30000000, 28980000),
         "jt40": calc_profit(h, 40000000, 38652000),
         "jt50": calc_profit(h, 50000000, 48325000)
